@@ -3,14 +3,6 @@
 #include "net.h"
 #include "arp.h"
 #include "ether.h"
-#include "../adhd.h"
-#include "../mem.h"
-#include "../alpha.h"
-
-/* TODO: Move interactive net stuff into its own module so it doesn't depend
- * on strings and console. */
-#include "../console.h"
-#include "../strings.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -25,6 +17,17 @@ const uint8_t g_src_mac[6] = { 0xab, 0xcd, 0xef, 0xde, 0xad, 0xbf };
 const char* g_ifname = "eth0";
 
 const struct astring g_str_netp = astring_l( "netp" );
+
+TASK_RETVAL net_show_counts() {
+   const int* received = NULL;
+   TASK_PID pid;
+
+   pid = adhd_get_pid_by_gid( &g_str_netp );
+   received = mget( pid, NET_MID_RECEIVED, sizeof( int ) );
+   tprintf( "frames rcvd: %d\n", *received );
+
+   return RETVAL_OK;
+}
 
 uint8_t net_respond_arp_request(
    TASK_PID pid, NET_SOCK socket, struct ether_frame* frame, int frame_len
