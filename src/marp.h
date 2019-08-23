@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-#include "ether.h"
+#include "mether.h"
 
 #define ARP_PACKET_HEADER_SIZE 24
 #ifdef NET_IPV6

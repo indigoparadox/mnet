@@ -1,43 +1,24 @@
 
-#define NET_C
-#include "net.h"
-#include "arp.h"
-#include "ether.h"
+#define MNET_C
+#include "mnet.h"
+#include "marp.h"
 
 #include <stddef.h>
 #include <stdint.h>
-
-/* Memory IDs for network tasks. */
-#define NET_MID_SOCKET 1
 
 const uint8_t g_bcast_mac[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 const uint8_t g_src_ip[4] = { 10, 137, 2, 88 };
 const uint8_t g_search_ip[4] = { 10, 137, 2, 11 };
 const uint8_t g_src_mac[6] = { 0xab, 0xcd, 0xef, 0xde, 0xad, 0xbf };
-const char* g_ifname = "eth0";
-
-const struct astring g_str_netp = astring_l( "netp" );
-
-TASK_RETVAL net_show_counts() {
-   const int* received = NULL;
-   TASK_PID pid;
-
-   pid = adhd_get_pid_by_gid( &g_str_netp );
-   received = mget( pid, NET_MID_RECEIVED, sizeof( int ) );
-   tprintf( "frames rcvd: %d\n", *received );
-
-   return RETVAL_OK;
-}
 
 uint8_t net_respond_arp_request(
-   TASK_PID pid, NET_SOCK socket, struct ether_frame* frame, int frame_len
+   NET_SOCK socket, struct ether_frame* frame, int frame_len
 ) {
    struct arp_packet* arp = (struct arp_packet*)&(frame->data);
    int arp_len = 0;
    int arp_sz = frame_len - ether_get_header_len( frame, frame_len );
    uint8_t retval = 0;
    uint8_t dest_mac[6];
-   int* responded = 0;
 
    arp_len = arp_respond( arp, arp_sz, NULL, 0,
       g_src_mac, ETHER_ADDRLEN, g_src_ip, ETHER_ADDRLEN_IPV4 );
@@ -45,8 +26,7 @@ uint8_t net_respond_arp_request(
       goto cleanup;
    }
 
-   responded = mget( pid, NET_MID_RESPONDED, sizeof( int ) );
-   (*responded)++;
+   mnet_responded++;
 
 #ifdef NET_CON_ECHO
    tputs( g_str_responding );
@@ -69,58 +49,14 @@ cleanup:
 }
 
 uint8_t net_respond_arp(
-   TASK_PID pid, NET_SOCK socket, struct ether_frame* frame, int frame_len
+   NET_SOCK socket, struct ether_frame* frame, int frame_len
 ) {
    struct arp_header* arp_header = (struct arp_header*)&(frame->data);
    switch( ether_ntohs( arp_header->opcode ) ) {
       case ARP_REQUEST:
-         return net_respond_arp_request( pid, socket, frame, frame_len );
+         return net_respond_arp_request( socket, frame, frame_len );
    }
    return ARP_INVALID_PACKET;
-}
-
-TASK_RETVAL net_respond_task() {
-   struct ether_frame frame;
-   int frame_len = 0;
-   NET_SOCK* socket = NULL;
-   int* received = NULL;
-
-   adhd_task_setup();
-
-   adhd_set_gid( &g_str_netp );
-
-   socket = mget( adhd_get_pid(), NET_MID_SOCKET, sizeof( NET_SOCK ) );
-   if( NULL == *socket ) {
-      *socket = net_open_socket( g_ifname );
-      if( NULL == *socket ) {
-         tprintf( "no socket\n" );
-         adhd_exit_task();
-      }
-   }
-
-   frame_len = 
-      net_poll_frame( *socket, &frame, sizeof( struct ether_frame ) );
-   if( 0 >= frame_len ) {
-      adhd_yield();
-      adhd_continue_loop();
-   }
-
-   received = mget( adhd_get_pid(), NET_MID_RECEIVED, sizeof( int ) );
-   (*received)++;
-
-#ifdef NET_CON_ECHO
-   net_print_frame( &frame, frame_len );
-#endif /* NET_CON_ECHO */
-   switch( ether_ntohs( frame.header.type ) ) {
-      case ETHER_TYPE_ARP:
-         /* Shuck the Ethernet frame and handle the packet. */
-         net_respond_arp( adhd_get_pid(), &socket, &frame, frame_len );
-         adhd_yield();
-         adhd_continue_loop();
-   }
-
-   adhd_yield();
-   adhd_end_loop();
 }
 
 void net_init() {

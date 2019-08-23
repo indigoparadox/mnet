@@ -1,9 +1,9 @@
 
-#include "ether.h"
+#include "mether.h"
+
+#include "mmem.h"
 
 #include <stddef.h>
-
-#include "../mem.h"
 
 int ether_new_frame(
    struct ether_frame* frame_out, int frame_out_sz,
@@ -27,10 +27,10 @@ int ether_new_frame(
 
    /* Set the frame fields and encapsulate the provided packet. */
    header_out = (struct ether_header*)frame_out;
-   mcopy( header_out->src_mac, src_mac, 6 );
-   mcopy( header_out->dest_mac, dest_mac, 6 );
+   mnet_copy( header_out->src_mac, src_mac, 6 );
+   mnet_copy( header_out->dest_mac, dest_mac, 6 );
    header_out->type = ether_htons( (uint16_t)type );
-   mcopy( frame_out->data, packet, packet_len );
+   mnet_copy( frame_out->data, packet, packet_len );
 
 cleanup:
    return frame_len;
@@ -44,7 +44,7 @@ int ether_get_header_len( struct ether_frame* frame, int frame_len ) {
 uint16_t ether_ntohs( const uint16_t input ) {
    uint8_t output[2] = { 0 };
 
-   mcopy( &output, &input, sizeof( output ) );
+   mnet_copy( &output, &input, sizeof( output ) );
 
    return
       ((uint16_t) output[1] << 0) |
@@ -53,7 +53,7 @@ uint16_t ether_ntohs( const uint16_t input ) {
 
 uint32_t ether_ntohl( const uint32_t input ) {
    uint8_t output[4] = {};
-   mcopy( &output, &input, sizeof( output ) );
+   mnet_copy( &output, &input, sizeof( output ) );
 
    return
       ((uint32_t) output[3] << 0) |

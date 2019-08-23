@@ -1,7 +1,7 @@
 
 # vim: ft=make noexpandtab
 
-OBJECTS := net.o arp.o ether.o tcp.o
+OBJECTS := mnet.o marp.o mether.o mtcp.o mmem.o
 
 BINDIR_LINUX = ../bin/linux
 BINDIR_MSP430G2553 = ../bin/msp430g2553
@@ -25,13 +25,13 @@ $(BINDIR_MSP430G2553)/libmnet.a: CFLAGS += \
 	-ffreestanding \
 	-nostdlib
 
-test_mnet: LDFLAGS += $(shell pkg-config --libs check) -L. -lmbmp
+test_mnet: LDFLAGS += $(shell pkg-config --libs check) -L. -lmnet
 test_mnet: CFLAGS += -DCHECK -g -Wall -Werror
-test_mnet: OBJDIR := ../obj/test_mbmp
+test_mnet: OBJDIR := ../obj/test_mnet
 
-all: $(BINDIR_LINUX)/libmnet.a $(BINDIR_MSP430G2553)/libmbmp.a
+all: $(BINDIR_LINUX)/libmnet.a $(BINDIR_MSP430G2553)/libmnet.a
 
-test_mnet: libmbmp.a check.o
+test_mnet: libmnet.a check.o
 	$(CC) -o $@ $(OBJDIR)/check.o $(LDFLAGS)
 
 $(BINDIR_LINUX)/libmnet.a: $(addprefix ../obj/linux/,$(OBJECTS))

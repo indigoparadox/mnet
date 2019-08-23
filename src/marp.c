@@ -1,7 +1,7 @@
 
-#include "arp.h"
+#include "marp.h"
 
-#include "../mem.h"
+#include "mmem.h"
 
 #include <stddef.h>
 
@@ -66,7 +66,7 @@ int arp_get_dest_mac( uint8_t* mac, int mac_sz, struct arp_packet* arp ) {
    arp_packet_data += sizeof( struct arp_header );
    arp_packet_data += arp->header.hwsize;
    arp_packet_data += arp->header.protosize;
-   mcopy( mac, arp_packet_data, arp->header.hwsize );
+   mnet_copy( mac, arp_packet_data, arp->header.hwsize );
    retval = arp->header.hwsize;
 
 cleanup:
@@ -110,7 +110,7 @@ int arp_respond(
    incoming_ip = arp_packet_data; /* Use for response below. */
    arp_packet_data += header->protosize;
    arp_packet_data += header->hwsize;
-   if( 0 != mcompare( arp_packet_data, my_ip, my_ip_len ) ) {
+   if( 0 != mnet_compare( arp_packet_data, my_ip, my_ip_len ) ) {
       goto cleanup;
    }
 
@@ -125,7 +125,7 @@ int arp_respond(
    response_len = packet_claimed_size;
    if( NULL != resp_packet ) {
       /* Create a response packet and fill it out. */
-      mcopy( resp_packet, call_packet, response_len );
+      mnet_copy( resp_packet, call_packet, response_len );
    } else {
       /* Reuse the call packet. */
       resp_packet = call_packet;
@@ -138,13 +138,13 @@ int arp_respond(
     */
    arp_packet_data = (uint8_t*)resp_packet;
    arp_packet_data += sizeof( struct arp_header );
-   mcopy( arp_packet_data, my_mac, my_mac_len );
+   mnet_copy( arp_packet_data, my_mac, my_mac_len );
    arp_packet_data += header->hwsize;
-   mcopy( arp_packet_data, my_ip, my_ip_len );
+   mnet_copy( arp_packet_data, my_ip, my_ip_len );
    arp_packet_data += header->protosize;
-   mcopy( arp_packet_data, incoming_mac, header->hwsize );
+   mnet_copy( arp_packet_data, incoming_mac, header->hwsize );
    arp_packet_data += header->hwsize;
-   mcopy( arp_packet_data, incoming_ip, header->protosize );
+   mnet_copy( arp_packet_data, incoming_ip, header->protosize );
 
 #ifdef NET_CON_ECHO
    tprintf( "self match" );
@@ -178,19 +178,19 @@ struct arp_packet_ipv4* arp_new_packet_ipv4(
    /* Fill out whatever addresses we were given. */
 
    if( NULL != src_mac ) {
-      mcopy( arp_packet_out->src_mac, src_mac, ETHER_ADDRLEN );
+      mnet_copy( arp_packet_out->src_mac, src_mac, ETHER_ADDRLEN );
    }
 
    if( NULL != dest_mac ) {
-      mcopy( arp_packet_out->dest_mac, dest_mac, ETHER_ADDRLEN );
+      mnet_copy( arp_packet_out->dest_mac, dest_mac, ETHER_ADDRLEN );
    }
 
    if( NULL != src_ip ) {
-      mcopy( arp_packet_out->src_ip, src_ip, ETHER_ADDRLEN_IPV4 );
+      mnet_copy( arp_packet_out->src_ip, src_ip, ETHER_ADDRLEN_IPV4 );
    }
 
    if( NULL != dest_ip ) {
-      mcopy( arp_packet_out->dest_ip, dest_ip, ETHER_ADDRLEN_IPV4 );
+      mnet_copy( arp_packet_out->dest_ip, dest_ip, ETHER_ADDRLEN_IPV4 );
    }
 
 cleanup:
