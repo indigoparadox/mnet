@@ -27,14 +27,14 @@ $(BINDIR_MSP430G2553)/libmnet.a: CFLAGS += \
 	-ffreestanding \
 	-nostdlib
 
-test_mnet: LDFLAGS += $(shell pkg-config --libs check) -L. -lmnet
+test_mnet: LDFLAGS += $(shell pkg-config --libs check) -L../bin/linux/ -lmnet
 test_mnet: CFLAGS += -DCHECK -g -Wall -Werror
 test_mnet: OBJDIR := ../obj/test_mnet
 
 all: $(BINDIR_LINUX)/libmnet.a $(BINDIR_MSP430G2553)/libmnet.a
 
-test_mnet: $(BINDIR_LINUX)/libmnet.a $(OBJDIR_TESTS)/check.o $(OBJDIR_TESTS)/check_net.o $(OBJDIR_TESTS)/check_ether.o
-	$(CC) -o $@ $(OBJDIR)/check.o $(LDFLAGS)
+test_mnet: $(BINDIR_LINUX)/libmnet.a $(OBJDIR_TESTS)/check.o $(OBJDIR_TESTS)/check_ether.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(BINDIR_LINUX)/libmnet.a: $(addprefix ../obj/linux/,$(OBJECTS))
 	$(MD) $(BINDIR_LINUX)
