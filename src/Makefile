@@ -6,6 +6,8 @@ OBJECTS := mnet.o marp.o mether.o mtcp.o mmem.o
 BINDIR_LINUX = ../bin/linux
 BINDIR_MSP430G2553 = ../bin/msp430g2553
 
+OBJDIR_TESTS = ../obj/test_mnet
+
 MD=mkdir -v -p
 
 CFLAGS := -Wall -Werror -I../../mfat/src
@@ -31,7 +33,7 @@ test_mnet: OBJDIR := ../obj/test_mnet
 
 all: $(BINDIR_LINUX)/libmnet.a $(BINDIR_MSP430G2553)/libmnet.a
 
-test_mnet: libmnet.a check.o
+test_mnet: $(BINDIR_LINUX)/libmnet.a $(OBJDIR_TESTS)/check.o $(OBJDIR_TESTS)/check_net.o $(OBJDIR_TESTS)/check_ether.o
 	$(CC) -o $@ $(OBJDIR)/check.o $(LDFLAGS)
 
 $(BINDIR_LINUX)/libmnet.a: $(addprefix ../obj/linux/,$(OBJECTS))
@@ -43,6 +45,10 @@ $(BINDIR_MSP430G2553)/libmnet.a: $(addprefix ../obj/msp430g2553/,$(OBJECTS))
 	$(AR) rcs $@ $^
 
 ../obj/linux/%.o: $(notdir %.c)
+	$(MD) $(OBJDIR)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(OBJDIR_TESTS)/%.o: ../tests/$(notdir %.c)
 	$(MD) $(OBJDIR)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
